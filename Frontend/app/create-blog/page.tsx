@@ -47,9 +47,7 @@ export default function CreateBlog() {
         setIsUploading(true);
         const formData = new FormData();
         formData.append("image", imageFile);
-        const uploadRes = await api.post("/blog/upload", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        const uploadRes = await api.post("/blog/upload", formData);
         finalImageUrl = uploadRes.data.url;
       }
 

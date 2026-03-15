@@ -7,6 +7,28 @@ const express_1 = require("express");
 const user_1 = __importDefault(require("../models/user"));
 const auth_1 = require("../services/auth");
 const router = (0, express_1.Router)();
+function getTokenFromRequest(req) {
+    const authHeader = req.headers.authorization;
+    if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
+        return authHeader.slice("Bearer ".length).trim();
+    }
+    const headerToken = req.headers["x-auth-token"];
+    if (typeof headerToken === "string" && headerToken.trim()) {
+        return headerToken.trim();
+    }
+    return req.cookies?.token;
+}
+function getCookieOptions() {
+    const isProduction = process.env.NODE_ENV === "production";
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        // Cross-site (Vercel -> Railway) needs SameSite=None + Secure in production.
+        sameSite: (isProduction ? "none" : "lax"),
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
+    };
+}
 router.post('/signup', async (req, res) => {
     const { fullName, email, password } = req.body;
     if (!fullName || !email || !password) {
@@ -19,14 +41,10 @@ router.post('/signup', async (req, res) => {
             password,
         });
         const token = (0, auth_1.setUser)(newUser);
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
+        res.cookie('token', token, getCookieOptions());
         res.status(201).json({
             message: "User created successfully",
+            token,
             user: { id: newUser._id, fullName: newUser.fullName, email: newUser.email }
         });
     }
@@ -50,14 +68,10 @@ router.post('/signin', async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials" });
         }
         const token = (0, auth_1.setUser)(user);
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
+        res.cookie('token', token, getCookieOptions());
         res.status(200).json({
             message: "Signin successful",
+            token,
             user: { id: user._id, fullName: user.fullName, email: user.email }
         });
     }
@@ -66,11 +80,11 @@ router.post('/signin', async (req, res) => {
     }
 });
 router.post('/logout', (req, res) => {
-    res.clearCookie('token');
+    res.clearCookie('token', getCookieOptions());
     res.status(200).json({ message: "Logged out successfully" });
 });
 router.get('/me', async (req, res) => {
-    const token = req.cookies.token;
+    const token = getTokenFromRequest(req);
     if (!token)
         return res.status(401).json({ message: "Unauthorized" });
     const user = (0, auth_1.getUser)(token);

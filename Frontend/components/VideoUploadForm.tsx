@@ -63,9 +63,6 @@ export default function VideoUploadForm({ onUploadSuccess }: VideoUploadFormProp
 
     try {
       await api.post('/api/videos/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

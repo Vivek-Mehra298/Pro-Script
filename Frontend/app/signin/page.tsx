@@ -4,9 +4,11 @@ import Link from "next/link";
 import { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SigninPage() {
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -25,13 +27,15 @@ export default function SigninPage() {
 
     try {
       const response = await api.post("/user/signin", values);
-      // Handle successful signin (e.g., store token, redirect)
-      const token=response.data?.token as string | undefined;
-      if(!token){
-        alert("Signin failed: No token received");
-        return;
+      const token = response.data?.token as string | undefined;
+      const user = response.data?.user as { id: string; fullName: string; email: string } | undefined;
+
+      if (token) {
+        window.localStorage.setItem("token", token);
       }
-      localStorage.setItem("token",token);
+      if (user) {
+        login(user);
+      }
       form.reset();
       router.push("/dashboard");
     } catch (error) {

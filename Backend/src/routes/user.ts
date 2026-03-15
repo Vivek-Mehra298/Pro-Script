@@ -4,6 +4,32 @@ import { setUser, getUser } from "../services/auth";
 
 const router = Router();
 
+function getTokenFromRequest(req: Request) {
+    const authHeader = req.headers.authorization;
+    if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
+        return authHeader.slice("Bearer ".length).trim();
+    }
+
+    const headerToken = req.headers["x-auth-token"];
+    if (typeof headerToken === "string" && headerToken.trim()) {
+        return headerToken.trim();
+    }
+
+    return req.cookies?.token;
+}
+
+function getCookieOptions() {
+    const isProduction = process.env.NODE_ENV === "production";
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        // Cross-site (Vercel -> Railway) needs SameSite=None + Secure in production.
+        sameSite: (isProduction ? "none" : "lax") as "none" | "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
+    };
+}
+
 router.post('/signup', async (req: Request, res: Response) => {
     const { fullName, email, password } = req.body;
 
@@ -19,15 +45,11 @@ router.post('/signup', async (req: Request, res: Response) => {
         });
 
         const token = setUser(newUser);
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
+        res.cookie('token', token, getCookieOptions());
 
         res.status(201).json({ 
             message: "User created successfully", 
+            token,
             user: { id: newUser._id, fullName: newUser.fullName, email: newUser.email } 
         });
     } catch (error: any) {
@@ -53,15 +75,11 @@ router.post('/signin', async (req: Request, res: Response) => {
         }
 
         const token = setUser(user);
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
+        res.cookie('token', token, getCookieOptions());
 
         res.status(200).json({ 
             message: "Signin successful", 
+            token,
             user: { id: user._id, fullName: user.fullName, email: user.email } 
         });
     } catch (error: any) {
@@ -70,12 +88,12 @@ router.post('/signin', async (req: Request, res: Response) => {
 })
 
 router.post('/logout', (req: Request, res: Response) => {
-    res.clearCookie('token');
+    res.clearCookie('token', getCookieOptions());
     res.status(200).json({ message: "Logged out successfully" });
 });
 
 router.get('/me', async (req: Request, res: Response) => {
-    const token = req.cookies.token;
+    const token = getTokenFromRequest(req);
     if (!token) return res.status(401).json({ message: "Unauthorized" });
 
     const user = getUser(token);
