@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" role="img" aria-label="Subtle abstract background">
+  <defs>
+    <linearGradient id="wash" x1="0" y1="0" x2="1920" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F6F3EE"/>
+      <stop offset="0.55" stop-color="#F2EEE8"/>
+      <stop offset="1" stop-color="#F7F5F1"/>
+    </linearGradient>
+
+    <radialGradient id="accentGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1500 200) rotate(145) scale(520 420)">
+      <stop stop-color="#7C3AED" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="inkGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(380 860) rotate(20) scale(620 520)">
+      <stop stop-color="#111827" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#111827" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="softBlur" x="-30%" y="-30%" width="160%" height="160%" filterUnits="objectBoundingBox" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18" />
+    </filter>
+
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#111827" fill-opacity="0.08"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#wash)"/>
+
+  <g filter="url(#softBlur)">
+    <path d="M1530 40C1760 100 1910 260 1900 420C1892 612 1705 690 1508 650C1302 608 1175 470 1202 300C1228 144 1370 -6 1530 40Z" fill="url(#accentGlow)"/>
+    <path d="M240 620C420 530 640 560 760 720C892 898 820 1040 640 1084C468 1126 286 1048 190 930C76 790 90 690 240 620Z" fill="url(#inkGlow)"/>
+  </g>
+
+  <path d="M0 170C220 110 430 120 650 190C900 268 1100 284 1400 212C1650 152 1780 130 1920 150V0H0V170Z" fill="#FFFFFF" fill-opacity="0.35"/>
+
+  <rect x="1120" y="560" width="700" height="420" fill="url(#dots)" opacity="0.55"/>
+
+  <path d="M1280 990C1440 930 1620 920 1920 980V1080H1280V990Z" fill="#FFFFFF" fill-opacity="0.35"/>
+</svg>
+
