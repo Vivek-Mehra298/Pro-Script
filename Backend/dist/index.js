@@ -13,6 +13,7 @@ const user_1 = __importDefault(require("./routes/user"));
 const blog_1 = __importDefault(require("./routes/blog"));
 const video_1 = __importDefault(require("./routes/video"));
 const app = (0, express_1.default)();
+app.set("trust proxy", 1);
 app.use((req, res, next) => {
     console.log(`[DEBUG] ${req.method} ${req.url}`);
     next();
@@ -31,14 +32,45 @@ function redactMongoUri(uri) {
 }
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
+function parseOriginRule(raw) {
+    const value = raw.trim();
+    if (value.startsWith("*.")) {
+        return { type: "wildcard_suffix", suffix: value.slice(1) };
+    }
+    return { type: "exact", value };
+}
+const allowedOriginRules = (process.env.CORS_ORIGIN || "http://localhost:3000")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean)
+    .map(parseOriginRule);
+function isOriginAllowed(origin) {
+    return allowedOriginRules.some((rule) => {
+        if (rule.type === "exact")
+            return origin === rule.value;
+        return origin.endsWith(rule.suffix);
+    });
+}
 app.use((0, cors_1.default)({
-    origin: "http://localhost:3000",
+    origin: (origin, callback) => {
+        if (!origin)
+            return callback(null, true);
+        if (isOriginAllowed(origin))
+            return callback(null, true);
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true
 }));
 app.use((0, cookie_parser_1.default)());
 app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
 app.get('/', (req, res) => {
     res.send("ProScript API is running");
+});
+app.get("/health", (req, res) => {
+    res.status(200).json({
+        ok: true,
+        mongoReadyState: mongoose_1.default.connection.readyState,
+    });
 });
 app.use('/user', user_1.default);
 app.use('/blog', blog_1.default);

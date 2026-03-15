@@ -10,6 +10,7 @@ import blogRouter from "./routes/blog";
 import videoRouter from "./routes/video";
 
 const app=express();
+app.set("trust proxy", 1);
 
 app.use((req, res, next) => {
     console.log(`[DEBUG] ${req.method} ${req.url}`);
@@ -31,8 +32,35 @@ function redactMongoUri(uri: string) {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+type OriginRule = { type: "exact"; value: string } | { type: "wildcard_suffix"; suffix: string };
+
+function parseOriginRule(raw: string): OriginRule {
+    const value = raw.trim();
+    if (value.startsWith("*.")) {
+        return { type: "wildcard_suffix", suffix: value.slice(1) };
+    }
+    return { type: "exact", value };
+}
+
+const allowedOriginRules = (process.env.CORS_ORIGIN || "http://localhost:3000")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean)
+    .map(parseOriginRule);
+
+function isOriginAllowed(origin: string) {
+    return allowedOriginRules.some((rule) => {
+        if (rule.type === "exact") return origin === rule.value;
+        return origin.endsWith(rule.suffix);
+    });
+}
+
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (isOriginAllowed(origin)) return callback(null, true);
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true
 }));
 app.use(cookieParser());
@@ -41,6 +69,13 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.get('/',(req:Request,res:Response)=>{
     res.send("ProScript API is running")
 })
+
+app.get("/health", (req, res) => {
+    res.status(200).json({
+        ok: true,
+        mongoReadyState: mongoose.connection.readyState,
+    });
+});
 
 app.use('/user', userRouter);
 app.use('/blog', blogRouter);

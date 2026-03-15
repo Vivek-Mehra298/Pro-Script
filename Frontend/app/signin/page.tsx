@@ -1,9 +1,9 @@
 "use client";
 
-import axios from "axios";
 import Link from "next/link";
 import { FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import api from "@/lib/api";
 
 export default function SigninPage() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function SigninPage() {
     const values = { email, password };
 
     try {
-      const response = await axios.post("http://localhost:4000/user/signin", values);
+      const response = await api.post("/user/signin", values);
       // Handle successful signin (e.g., store token, redirect)
       const token=response.data?.token as string | undefined;
       if(!token){
@@ -36,7 +36,11 @@ export default function SigninPage() {
       router.push("/dashboard");
     } catch (error) {
       // Handle signin error
-      alert("Signin failed: " + String(error));
+      const message =
+        (error as any)?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Signin failed";
+      alert(message);
     }
   };
 

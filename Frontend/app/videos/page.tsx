@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import VideoUploadForm from '@/components/VideoUploadForm';
 import VideoPlayer from '@/components/VideoPlayer';
+import api from '@/lib/api';
 
 interface Video {
   _id: string;
@@ -25,7 +25,7 @@ export default function VideosPage() {
   const fetchVideos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:4000/api/videos');
+      const response = await api.get('/api/videos');
       setVideos(response.data);
     } catch (error) {
       console.error('Error fetching videos:', error);

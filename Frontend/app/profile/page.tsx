@@ -49,7 +49,7 @@ export default function ProfilePage() {
     };
     const fetchMyVideos = async () => {
       try {
-        const response = await api.get("http://localhost:4000/api/videos");
+        const response = await api.get("/api/videos");
         const userId = user?.id || (user as any)?._id;
         const myVideos = response.data.filter((v: any) => v.author?._id === userId);
         setVideos(myVideos);
@@ -79,7 +79,7 @@ export default function ProfilePage() {
   const handleDeleteVideo = async (id: string) => {
     if (!confirm("Are you sure you want to delete this video?")) return;
     try {
-      await api.delete(`http://localhost:4000/api/videos/${id}`);
+      await api.delete(`/api/videos/${id}`);
       setVideos(videos.filter(v => v._id !== id));
     } catch (error) {
       console.error("Delete video failed", error);

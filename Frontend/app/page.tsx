@@ -54,8 +54,7 @@ export default function Home() {
     };
     const fetchVideos = async () => {
       try {
-        // Fallback to absolute URL if proxy not fully wired
-        const response = await api.get("http://localhost:4000/api/videos");
+        const response = await api.get("/api/videos");
         setVideos(response.data);
       } catch (error) {
         console.error("Failed to fetch videos", error);

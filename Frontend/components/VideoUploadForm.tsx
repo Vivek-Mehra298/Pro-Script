@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 
 interface VideoUploadFormProps {
   onUploadSuccess?: () => void;
@@ -62,11 +62,10 @@ export default function VideoUploadForm({ onUploadSuccess }: VideoUploadFormProp
     formData.append('selectedTopic', selectedTopic);
 
     try {
-      const response = await axios.post('http://localhost:4000/api/videos/upload', formData, {
+      await api.post('/api/videos/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        withCredentials: true,
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

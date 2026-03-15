@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import axios from "axios";
 import type { FormEvent } from "react";
+import api from "@/lib/api";
 
 export default function SignupPage() {
   const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
@@ -17,16 +17,16 @@ export default function SignupPage() {
     };
 
     try {
-      const response = await axios.post("http://localhost:4000/user/signup", values);
+      const response = await api.post("/user/signup", values);
       console.log(response.data);
       alert("User created successfully");
       form.reset();
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        alert(err.response?.data?.message || "Signup failed");
-      } else {
-        alert("Signup failed");
-      }
+      const message =
+        (err as any)?.response?.data?.message ||
+        (err as Error)?.message ||
+        "Signup failed";
+      alert(message);
       console.error(err);
     }
   };

@@ -12,8 +12,7 @@ interface VideoPlayerProps {
 }
 
 export default function VideoPlayer({ videoPath, title, topic, authorName, createdAt }: VideoPlayerProps) {
-  // Assuming backend is running on http://localhost:4000
-  const backendUrl = "http://localhost:4000";
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
   const fullVideoUrl = `${backendUrl}${videoPath}`;
 
   return (
