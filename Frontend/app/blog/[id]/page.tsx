@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { Calendar, User, ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
+import { resolveImageUrl } from "@/lib/resolve-url";
 
 interface Blog {
   _id: string;
@@ -102,7 +103,7 @@ export default function BlogDetails() {
             className="mb-12 aspect-video w-full overflow-hidden rounded-3xl border border-white/10"
           >
             <img
-              src={blog.coverImage}
+              src={resolveImageUrl(blog.coverImage)}
               className="h-full w-full object-cover"
               alt={blog.title}
             />

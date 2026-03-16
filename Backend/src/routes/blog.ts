@@ -24,10 +24,7 @@ router.post("/upload", checkAuth, upload.single("image"), (req: Request, res: Re
   if (!req.file) {
     return res.status(400).json({ message: "No file uploaded" });
   }
-  const publicBaseUrl = process.env.PUBLIC_BASE_URL;
-  const inferredBaseUrl = `${req.protocol}://${req.get("host")}`;
-  const baseUrl = publicBaseUrl || inferredBaseUrl;
-  const imageUrl = new URL(`/uploads/${req.file.filename}`, baseUrl).toString();
+  const imageUrl = `/uploads/${req.file.filename}`;
   res.status(200).json({ url: imageUrl });
 });
 

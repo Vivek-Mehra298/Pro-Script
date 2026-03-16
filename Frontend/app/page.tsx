@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { Calendar, User, ArrowRight, Video as VideoIcon } from "lucide-react";
 import VideoPlayer from "@/components/VideoPlayer";
+import { resolveImageUrl } from "@/lib/resolve-url";
 
 interface Blog {
   _id: string;
@@ -138,7 +139,7 @@ export default function Home() {
               >
                 <div className="aspect-video w-full overflow-hidden bg-white/5">
                   <img
-                    src={blog.coverImage || `https://images.unsplash.com/photo-14?q=80&w=2000&auto=format&fit=crop`}
+                    src={resolveImageUrl(blog.coverImage) || `https://images.unsplash.com/photo-14?q=80&w=2000&auto=format&fit=crop`}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                     alt={blog.title}
                   />
