@@ -100,11 +100,9 @@ app.use(cors({
         console.log(`[CORS] Checking origin: "${origin}" against rules. Match found: ${allowed}`);
         if (!allowed) {
             console.warn(`[CORS] Rejected origin: ${origin}. Expected one of: ${process.env.CORS_ORIGIN || "http://localhost:3000"}`);
+            return callback(new Error(`CORS policy blocked access from origin: ${origin}`));
         }
-        if (allowed) {
-            return callback(null, true);
-        }
-        return callback(new Error(`CORS blocked for origin: ${origin}`));
+        return callback(null, true);
     },
     credentials: true
 }));
@@ -125,6 +123,25 @@ app.use('/api/videos', videoRouter);
 app.use((req, res) => {
     console.log(`[404] Not Found: ${req.method} ${req.originalUrl}`);
     res.status(404).json({ message: `Route ${req.method} ${req.originalUrl} not found` });
+});
+
+// Global Error Handler
+app.use((err: any, req: Request, res: Response, next: any) => {
+    console.error(`[ERROR] Unhandled exception at ${req.method} ${req.url}:`, err.message);
+    
+    // Check if it's a CORS error
+    if (err.message.includes("CORS policy blocked access")) {
+        return res.status(403).json({ 
+            error: "CORS_FORBIDDEN",
+            message: err.message,
+            hint: "Check your CORS_ORIGIN environment variable in Railway"
+        });
+    }
+
+    res.status(500).json({ 
+        error: "INTERNAL_SERVER_ERROR",
+        message: process.env.NODE_ENV === "production" ? "An unexpected error occurred" : err.message 
+    });
 });
 
 async function startServer() {
