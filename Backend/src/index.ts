@@ -11,8 +11,24 @@ import videoRouter from "./routes/video";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
+process.on('SIGTERM', () => {
+    console.log('[DEBUG] SIGTERM received - Railway is terminating the process');
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    console.log('[DEBUG] SIGINT received');
+    process.exit(0);
+});
+
 const app=express();
 app.set("trust proxy", 1);
+
+// Priority Health Check
+app.get('/',(req:Request,res:Response)=>{
+    console.log("[DEBUG] Root / hit - App is alive & responding to health check");
+    res.send("ProScript API is running")
+})
 
 app.use((req, res, next) => {
     const origin = req.headers.origin || "no-origin";
@@ -91,18 +107,12 @@ app.use(cors({
 app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-app.get('/',(req:Request,res:Response)=>{
-    console.log("[DEBUG] Root / hit - App is alive");
-    res.send("ProScript API is running")
-})
-
 app.get("/health", (req, res) => {
     res.status(200).json({
         ok: true,
         mongoReadyState: mongoose.connection.readyState,
     });
 });
-
 app.use('/user', userRouter);
 app.use('/blog', blogRouter);
 app.use('/api/videos', videoRouter);
