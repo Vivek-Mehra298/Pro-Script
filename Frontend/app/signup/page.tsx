@@ -3,8 +3,13 @@
 import Link from "next/link";
 import type { FormEvent } from "react";
 import api from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
+  const { login } = useAuth();
+  const router = useRouter();
+
   const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -19,8 +24,19 @@ export default function SignupPage() {
     try {
       const response = await api.post("/user/signup", values);
       console.log(response.data);
+
+      const token = response.data?.token as string | undefined;
+      const user = response.data?.user as { id: string; fullName: string; email: string } | undefined;
+      if (token) {
+        window.localStorage.setItem("token", token);
+      }
+      if (user) {
+        login(user);
+      }
+
       alert("User created successfully");
       form.reset();
+      router.push("/dashboard");
     } catch (err) {
       const message =
         (err as any)?.response?.data?.message ||

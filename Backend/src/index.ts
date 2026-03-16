@@ -1,4 +1,4 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import express from "express";
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
@@ -8,6 +8,8 @@ import path from "path";
 import userRouter from "./routes/user";
 import blogRouter from "./routes/blog";
 import videoRouter from "./routes/video";
+
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app=express();
 app.set("trust proxy", 1);
@@ -20,6 +22,7 @@ app.use((req, res, next) => {
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/pro-script";
 const MONGO_URI_FALLBACK = process.env.MONGODB_URI_FALLBACK;
+const MONGODB_CONNECT_TIMEOUT_MS = Number(process.env.MONGODB_CONNECT_TIMEOUT_MS || 15000);
 
 function redactMongoUri(uri: string) {
     try {
@@ -58,7 +61,10 @@ function isOriginAllowed(origin: string) {
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        if (isOriginAllowed(origin)) return callback(null, true);
+        if (isOriginAllowed(origin)) {
+            return callback(null, true);
+        }
+        console.warn(`[CORS] Rejected origin: ${origin}`);
         return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true
@@ -96,12 +102,27 @@ async function startServer() {
             const uri = candidateUris[i]!;
             try {
                 console.log(`Connecting to MongoDB (attempt ${i + 1}/${candidateUris.length}) at ${redactMongoUri(uri)}...`);
-                await mongoose.connect(uri);
+
+                const connectPromise = mongoose.connect(uri, {
+                    serverSelectionTimeoutMS: 10000,
+                    connectTimeoutMS: 10000,
+                });
+
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    setTimeout(() => reject(new Error(`MongoDB connect timeout after ${MONGODB_CONNECT_TIMEOUT_MS}ms`)), MONGODB_CONNECT_TIMEOUT_MS);
+                });
+
+                await Promise.race([connectPromise, timeoutPromise]);
                 lastError = undefined;
                 break;
             } catch (error) {
                 lastError = error;
                 console.error("MongoDB connection attempt failed:", error);
+
+                const message = error instanceof Error ? error.message : String(error);
+                if (message.includes("MongoDB connect timeout")) {
+                    throw error;
+                }
             }
         }
 
