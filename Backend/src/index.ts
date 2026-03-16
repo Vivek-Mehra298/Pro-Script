@@ -56,6 +56,7 @@ function redactMongoUri(uri: string | undefined) {
 
 const FINAL_MONGO_URI = MONGO_URI || MONGO_URI_FALLBACK;
 
+console.log(`[DEBUG] DEPLOYMENT_ID: ${new Date().toISOString()}`); 
 console.log(`[DEBUG] NODE_ENV is: ${process.env.NODE_ENV}`);
 console.log(`[DEBUG] MONGODB_URI is ${process.env.MONGODB_URI ? "READY (defined)" : "MISSING"}`);
 console.log(`[DEBUG] Final URI to be used: ${redactMongoUri(FINAL_MONGO_URI)}`);
@@ -73,7 +74,10 @@ app.use(express.urlencoded({ extended: true }));
 type OriginRule = { type: "exact"; value: string } | { type: "wildcard_suffix"; suffix: string };
 
 function parseOriginRule(raw: string): OriginRule {
-    const value = raw.trim();
+    let value = raw.trim();
+    if (value.endsWith("/") && value.length > 8) {
+        value = value.slice(0, -1);
+    }
     if (value.startsWith("*.")) {
         return { type: "wildcard_suffix", suffix: value.slice(1) };
     }
@@ -96,11 +100,15 @@ function isOriginAllowed(origin: string) {
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        const allowed = isOriginAllowed(origin);
-        console.log(`[CORS] Checking origin: "${origin}" against rules. Match found: ${allowed}`);
+        
+        // Strip trailing slash for comparison
+        const normalizedOrigin = (origin.endsWith("/") && origin.length > 8) ? origin.slice(0, -1) : origin;
+        const allowed = isOriginAllowed(normalizedOrigin);
+        
+        console.log(`[CORS] Checking origin: "${normalizedOrigin}" against rules. Match found: ${allowed}`);
         if (!allowed) {
-            console.warn(`[CORS] Rejected origin: ${origin}. Expected one of: ${process.env.CORS_ORIGIN || "http://localhost:3000"}`);
-            return callback(new Error(`CORS policy blocked access from origin: ${origin}`));
+            console.warn(`[CORS] Rejected origin: ${normalizedOrigin}. Expected one of: ${process.env.CORS_ORIGIN || "http://localhost:3000"}`);
+            return callback(new Error(`CORS policy blocked access from origin: ${normalizedOrigin}`));
         }
         return callback(null, true);
     },
