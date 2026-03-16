@@ -24,18 +24,10 @@ const MONGO_URI = process.env.MONGODB_URI;
 const MONGO_URI_FALLBACK = process.env.MONGODB_URI_FALLBACK || "mongodb://localhost:27017/pro-script";
 const MONGODB_CONNECT_TIMEOUT_MS = Number(process.env.MONGODB_CONNECT_TIMEOUT_MS || 15000);
 
-if (!MONGO_URI && process.env.NODE_ENV === "production") {
-    console.error("❌ ERROR: MONGODB_URI is not defined in the environment.");
-    console.error("Please ensure you have set the MONGODB_URI variable in your Railway dashboard.");
-    process.exit(1);
-}
-
-const FINAL_MONGO_URI = MONGO_URI || MONGO_URI_FALLBACK;
-
-function redactMongoUri(uri: string) {
+function redactMongoUri(uri: string | undefined) {
     if (!uri) return "UNDEFINED";
     if (uri.startsWith("mongodb://localhost") || uri.startsWith("mongodb://127.0.0.1")) {
-        return uri; // Safe to show local dev URIs
+        return uri;
     }
     try {
         const url = new URL(uri);
@@ -45,9 +37,18 @@ function redactMongoUri(uri: string) {
     }
 }
 
-console.log(`[DEBUG] MONGODB_URI is ${process.env.MONGODB_URI ? "READY (defined)" : "MISSING (using fallback)"}`);
+const FINAL_MONGO_URI = MONGO_URI || MONGO_URI_FALLBACK;
+
+console.log(`[DEBUG] NODE_ENV is: ${process.env.NODE_ENV}`);
+console.log(`[DEBUG] MONGODB_URI is ${process.env.MONGODB_URI ? "READY (defined)" : "MISSING"}`);
 console.log(`[DEBUG] Final URI to be used: ${redactMongoUri(FINAL_MONGO_URI)}`);
 console.log(`[DEBUG] Available Env Keys: ${Object.keys(process.env).sort().join(", ")}`);
+
+if (!MONGO_URI && process.env.NODE_ENV === "production") {
+    console.error("❌ ERROR: MONGODB_URI is not defined in the environment.");
+    console.error("Please ensure you have set the MONGODB_URI variable in your Railway dashboard.");
+    process.exit(1);
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
