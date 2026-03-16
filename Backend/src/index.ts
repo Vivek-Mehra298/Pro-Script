@@ -30,11 +30,29 @@ app.get('/',(req:Request,res:Response)=>{
     res.send("ProScript API is running")
 })
 
+// Sanitize URLs (collapse double slashes like //uploads to /uploads)
+app.use((req, res, next) => {
+    if (req.url.includes("//")) {
+        const sanitizedUrl = req.url.replace(/\/+/g, "/");
+        console.log(`[DEBUG] Sanitizing URL: ${req.url} -> ${sanitizedUrl}`);
+        req.url = sanitizedUrl;
+    }
+    next();
+});
+
 app.use((req, res, next) => {
     const origin = req.headers.origin || "no-origin";
     console.log(`[DEBUG] ${req.method} ${req.url} - Origin: ${origin}`);
     next();
 });
+
+// Ensure uploads directory exists
+const fs = require('fs');
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+    console.log(`[DEBUG] Creating missing uploads directory at ${uploadsDir}`);
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGODB_URI;

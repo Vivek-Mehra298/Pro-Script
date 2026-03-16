@@ -12,8 +12,9 @@ interface VideoPlayerProps {
 }
 
 export default function VideoPlayer({ videoPath, title, topic, authorName, createdAt }: VideoPlayerProps) {
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-  const fullVideoUrl = `${backendUrl}${videoPath}`;
+  const backendUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
+  const normalizedPath = videoPath.startsWith("/") ? videoPath : `/${videoPath}`;
+  const fullVideoUrl = `${backendUrl}${normalizedPath}`;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 glass transition-all hover:border-indigo-500/50">
