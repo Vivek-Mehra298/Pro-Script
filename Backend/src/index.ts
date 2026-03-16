@@ -20,9 +20,17 @@ app.use((req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/pro-script";
-const MONGO_URI_FALLBACK = process.env.MONGODB_URI_FALLBACK;
+const MONGO_URI = process.env.MONGODB_URI;
+const MONGO_URI_FALLBACK = process.env.MONGODB_URI_FALLBACK || "mongodb://localhost:27017/pro-script";
 const MONGODB_CONNECT_TIMEOUT_MS = Number(process.env.MONGODB_CONNECT_TIMEOUT_MS || 15000);
+
+if (!MONGO_URI && process.env.NODE_ENV === "production") {
+    console.error("❌ ERROR: MONGODB_URI is not defined in the environment.");
+    console.error("Please ensure you have set the MONGODB_URI variable in your Railway dashboard.");
+    process.exit(1);
+}
+
+const FINAL_MONGO_URI = MONGO_URI || MONGO_URI_FALLBACK;
 
 function redactMongoUri(uri: string) {
     if (!uri) return "UNDEFINED";
@@ -38,7 +46,8 @@ function redactMongoUri(uri: string) {
 }
 
 console.log(`[DEBUG] MONGODB_URI is ${process.env.MONGODB_URI ? "READY (defined)" : "MISSING (using fallback)"}`);
-console.log(`[DEBUG] Final URI to be used: ${redactMongoUri(MONGO_URI)}`);
+console.log(`[DEBUG] Final URI to be used: ${redactMongoUri(FINAL_MONGO_URI)}`);
+console.log(`[DEBUG] Available Env Keys: ${Object.keys(process.env).sort().join(", ")}`);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -102,7 +111,7 @@ app.use((req, res) => {
 
 async function startServer() {
     try {
-        const candidateUris = [MONGO_URI, MONGO_URI_FALLBACK].filter(Boolean) as string[];
+        const candidateUris = [FINAL_MONGO_URI].filter(Boolean) as string[];
 
         let lastError: unknown = undefined;
         for (let i = 0; i < candidateUris.length; i++) {
