@@ -96,10 +96,14 @@ function isOriginAllowed(origin: string) {
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        if (isOriginAllowed(origin)) {
+        const allowed = isOriginAllowed(origin);
+        console.log(`[CORS] Checking origin: "${origin}" against rules. Match found: ${allowed}`);
+        if (!allowed) {
+            console.warn(`[CORS] Rejected origin: ${origin}. Expected one of: ${process.env.CORS_ORIGIN || "http://localhost:3000"}`);
+        }
+        if (allowed) {
             return callback(null, true);
         }
-        console.warn(`[CORS] Rejected origin: ${origin}`);
         return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true
