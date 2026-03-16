@@ -15,7 +15,8 @@ const app=express();
 app.set("trust proxy", 1);
 
 app.use((req, res, next) => {
-    console.log(`[DEBUG] ${req.method} ${req.url}`);
+    const origin = req.headers.origin || "no-origin";
+    console.log(`[DEBUG] ${req.method} ${req.url} - Origin: ${origin}`);
     next();
 });
 
@@ -42,6 +43,7 @@ const FINAL_MONGO_URI = MONGO_URI || MONGO_URI_FALLBACK;
 console.log(`[DEBUG] NODE_ENV is: ${process.env.NODE_ENV}`);
 console.log(`[DEBUG] MONGODB_URI is ${process.env.MONGODB_URI ? "READY (defined)" : "MISSING"}`);
 console.log(`[DEBUG] Final URI to be used: ${redactMongoUri(FINAL_MONGO_URI)}`);
+console.log(`[DEBUG] CORS_ORIGIN is: ${process.env.CORS_ORIGIN || "DEFAULT (localhost:3000)"}`);
 console.log(`[DEBUG] Available Env Keys: ${Object.keys(process.env).sort().join(", ")}`);
 
 if (!MONGO_URI && process.env.NODE_ENV === "production") {
@@ -90,6 +92,7 @@ app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get('/',(req:Request,res:Response)=>{
+    console.log("[DEBUG] Root / hit - App is alive");
     res.send("ProScript API is running")
 })
 
@@ -153,8 +156,8 @@ async function startServer() {
         }
         console.log('✅ MongoDB Connected successfully');
 
-        app.listen(PORT,()=>{
-            console.log(`🚀 Server is running on http://localhost:${PORT}`);
+        app.listen(Number(PORT), "0.0.0.0", () => {
+            console.log(`🚀 Server is listening on 0.0.0.0:${PORT}`);
         });
     } catch (error) {
         console.error('❌ MongoDB connection failed:', error);
