@@ -25,13 +25,20 @@ const MONGO_URI_FALLBACK = process.env.MONGODB_URI_FALLBACK;
 const MONGODB_CONNECT_TIMEOUT_MS = Number(process.env.MONGODB_CONNECT_TIMEOUT_MS || 15000);
 
 function redactMongoUri(uri: string) {
+    if (!uri) return "UNDEFINED";
+    if (uri.startsWith("mongodb://localhost") || uri.startsWith("mongodb://127.0.0.1")) {
+        return uri; // Safe to show local dev URIs
+    }
     try {
         const url = new URL(uri);
-        return `${url.protocol}//${url.host}${url.pathname}`;
+        return `${url.protocol}//<redacted_credentials>@${url.host}${url.pathname}`;
     } catch {
-        return "mongodb://<redacted>";
+        return "<invalid_uri_format>";
     }
 }
+
+console.log(`[DEBUG] MONGODB_URI is ${process.env.MONGODB_URI ? "READY (defined)" : "MISSING (using fallback)"}`);
+console.log(`[DEBUG] Final URI to be used: ${redactMongoUri(MONGO_URI)}`);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -117,11 +124,16 @@ async function startServer() {
                 break;
             } catch (error) {
                 lastError = error;
-                console.error("MongoDB connection attempt failed:", error);
-
                 const message = error instanceof Error ? error.message : String(error);
-                if (message.includes("MongoDB connect timeout")) {
-                    throw error;
+                
+                if (message.includes("IP address not allowed")) {
+                    console.error("❌ MongoDB Atlas: IP address not allowed. Please whitelist 0.0.0.0/0 in your Atlas Network Access settings.");
+                } else if (message.includes("Authentication failed")) {
+                    console.error("❌ MongoDB Atlas: Authentication failed. Please check your username and password in MONGODB_URI.");
+                } else if (message.includes("MongoDB connect timeout")) {
+                    console.error(`❌ MongoDB Atlas: Connection timed out. This often happens if the firewall/IP whitelist is blocking the connection.`);
+                } else {
+                    console.error("❌ MongoDB connection attempt failed:", error);
                 }
             }
         }
